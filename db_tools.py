@@ -88,7 +88,7 @@ class SQLUtils:
 
     def connect(self):
         """Connects to the database"""
-        self.conn = sqlite3.connect(f'/{FS_USER}/{os.getenv("DB_NAME")}.db')
+        self.conn = sqlite3.connect(f'/{FS_USER}/vpn_wireguard_mirror_bot/{os.getenv("DB_NAME")}.db')
 
     def query(self, request):
         """Executes query"""

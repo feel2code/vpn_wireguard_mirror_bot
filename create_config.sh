@@ -2,7 +2,7 @@
 
 set username [lindex $argv 0]
 
-spawn ./wireguard-install.sh
+spawn /root/./wireguard-install.sh
 expect "Option:"
 send "1\n"
 expect "Name:"

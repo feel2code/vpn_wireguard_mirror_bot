@@ -1,0 +1,12 @@
+[Unit]
+Description=VPN Mirror bot
+After=multi-user.target
+
+[Service]
+RestartSec=10
+Restart=always
+EnvironmentFile=/root/vpn_wireguard_mirror_bot/.env
+ExecStart=/root/vpn_wireguard_mirror_bot/venv/bin/python /root/vpn_wireguard_mirror_bot/main.py
+
+[Install]
+WantedBy=multi-user.target
