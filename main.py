@@ -117,7 +117,7 @@ async def successful_payment(message: Message, bot: Bot) -> None:
     then send it to the user
     """
     user_id = message.from_user.id
-    uuid_gen = str(uuid4()).split("-")[0][3:]
+    uuid_gen = str(uuid4())[:13]
 
     if DEMO_REGIME:
         await bot.refund_star_payment(
@@ -125,7 +125,7 @@ async def successful_payment(message: Message, bot: Bot) -> None:
             telegram_payment_charge_id=message.successful_payment.telegram_payment_charge_id,
         )
         await message.answer("Demo. Your payment has been refunded.")
-        need_to_update_user(user_id, f"{user_id}_{uuid_gen}")
+        need_to_update_user(user_id, f"{uuid_gen}")
         return
 
     await message.answer(
@@ -133,15 +133,15 @@ async def successful_payment(message: Message, bot: Bot) -> None:
         Ваш ID платежа: {message.successful_payment.telegram_payment_charge_id}""",
         message_effect_id="5104841245755180586",  # stars effect
     )
-    if not need_to_update_user(user_id, f"{user_id}_{uuid_gen}"):
+    if not need_to_update_user(user_id, f"{uuid_gen}"):
         subprocess.run(
             shlex.split(
-                f"/{FS_USER}/vpn_wireguard_mirror_bot/./create_config.sh {user_id}_{uuid_gen}"
+                f"/{FS_USER}/vpn_wireguard_mirror_bot/./create_config.sh {uuid_gen}"
             )
         )
         await bot.send_document(
             chat_id=user_id,
-            document=FSInputFile(f"/{FS_USER}/{user_id}_{uuid_gen}.conf"),
+            document=FSInputFile(f"/{FS_USER}/{uuid_gen}.conf"),
         )
         return
 
