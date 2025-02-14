@@ -117,7 +117,7 @@ async def successful_payment(message: Message, bot: Bot) -> None:
     then send it to the user
     """
     user_id = message.from_user.id
-    uuid_gen = uuid4()
+    uuid_gen = str(uuid4()).split("-")[0][3:]
 
     if DEMO_REGIME:
         await bot.refund_star_payment(
@@ -135,7 +135,9 @@ async def successful_payment(message: Message, bot: Bot) -> None:
     )
     if not need_to_update_user(user_id, f"{user_id}_{uuid_gen}"):
         subprocess.run(
-            shlex.split(f"/{FS_USER}/vpn_wireguard_mirror_bot/./create_config.sh {user_id}_{uuid_gen}")
+            shlex.split(
+                f"/{FS_USER}/vpn_wireguard_mirror_bot/./create_config.sh {user_id}_{uuid_gen}"
+            )
         )
         await bot.send_document(
             chat_id=user_id,
