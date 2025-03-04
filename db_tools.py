@@ -29,7 +29,10 @@ def check_all_subscriptions():
     subscriptions_end = db_conn.query(
         "select obfuscated_user from users where subscription_end <= date('now');"
     )
-    return subscriptions_end
+    subscriptions_ends_tomorrow_users = db_conn.query(
+        "select user_id from users where subscription_end >= date('now', '+1 day');"
+    )
+    return subscriptions_end, subscriptions_ends_tomorrow_users
 
 
 def get_obfuscated_user_conf(user_id):
@@ -88,7 +91,9 @@ class SQLUtils:
 
     def connect(self):
         """Connects to the database"""
-        self.conn = sqlite3.connect(f'/{FS_USER}/vpn_wireguard_mirror_bot/{os.getenv("DB_NAME")}.db')
+        self.conn = sqlite3.connect(
+            f'/{FS_USER}/vpn_wireguard_mirror_bot/{os.getenv("DB_NAME")}.db'
+        )
 
     def query(self, request):
         """Executes query"""
