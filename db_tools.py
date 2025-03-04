@@ -30,7 +30,7 @@ def check_all_subscriptions():
         "select obfuscated_user from users where subscription_end <= date('now');"
     )
     subscriptions_ends_tomorrow_users = db_conn.query(
-        "select user_id from users where subscription_end >= date('now', '+1 day');"
+        "select user_id from users where subscription_end >= date('now', '+1 day') and subscription_end < date('now', '+2 day');"
     )
     return subscriptions_end, subscriptions_ends_tomorrow_users
 
