@@ -258,6 +258,7 @@ async def command_start_handler(message: Message) -> None:
 
             Принимаете условия использования сервиса?
         """,
+        parse_mode="Markdown",
         reply_markup=accept_kb(),
     )
 
