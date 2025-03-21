@@ -49,7 +49,7 @@ def subscribe_management_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     kb.button(text="➕ Купить подписку", callback_data="subscribe")
     kb.button(text="🗑️ Отменить подписку", callback_data="unsubscribe")
-    kb.button(text="ℹ️  Инструкция", callback_data="instruction")
+    kb.button(text="ℹ️  Инструкция и поддержка", callback_data="instruction")
     kb.button(
         text="👽 Проверить подписку", callback_data="check_end_date_of_subscription"
     )
@@ -189,6 +189,8 @@ async def get_instruction(call: CallbackQuery) -> None:
         импортировать в приложении для подключения.
 
         Приятного пользования!
+
+        По вопросам поддержки обращаться к @feel2code
         """,
         reply_markup=home_kb(),
     )
