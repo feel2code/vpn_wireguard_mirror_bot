@@ -191,7 +191,9 @@ async def get_instruction(call: CallbackQuery) -> None:
         Приятного пользования!
 
         По вопросам поддержки обращаться к @feel2code
-        """,
+        """.replace(
+            "  ", ""
+        ),
         reply_markup=home_kb(),
     )
 
@@ -257,8 +259,9 @@ async def command_start_handler(message: Message) -> None:
             При повторной оплате подписка продлевается на 30 дней.
 
             Принимаете условия использования сервиса?
-        """,
-        parse_mode="Markdown",
+        """.replace(
+            "  ", ""
+        ),
         reply_markup=accept_kb(),
     )
 
