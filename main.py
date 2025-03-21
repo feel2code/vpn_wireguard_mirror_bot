@@ -48,7 +48,7 @@ def subscribe_management_kb() -> InlineKeyboardMarkup:
     """
     kb = InlineKeyboardBuilder()
     kb.button(text="➕ Купить подписку", callback_data="subscribe")
-    kb.button(text="🗑️ Отменить подписку", callback_data="unsubscribe")
+    # kb.button(text="🗑️ Отменить подписку", callback_data="unsubscribe")
     kb.button(text="ℹ️  Инструкция и поддержка", callback_data="instruction")
     kb.button(
         text="👽 Проверить подписку", callback_data="check_end_date_of_subscription"
