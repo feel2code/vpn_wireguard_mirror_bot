@@ -56,7 +56,7 @@ def delete_user(user_id):
     db_conn.mutate(f"delete from users where user_id={user_id};")
 
 
-def need_to_update_user(user_id, obfuscated_user):
+def need_to_update_user(user_id, obfuscated_user, invoice_payload):
     """
     Returns True if user exists in the database and False if not
     and updates user's subscription end date if exists,
@@ -65,11 +65,12 @@ def need_to_update_user(user_id, obfuscated_user):
     db_conn = SQLUtils()
     user_exist = db_conn.query(f"select count(*) from users where user_id={user_id};")
     cur_datetime = datetime.now()
-    end_of_period = cur_datetime + timedelta(days=30)
+    prolongation = int(invoice_payload.split("_")[1])
+    end_of_period = cur_datetime + timedelta(days=prolongation)
     if user_exist:
         end_of_period = datetime.fromisoformat(
             check_subscription_end(user_id)
-        ) + timedelta(days=30)
+        ) + timedelta(days=prolongation)
         db_conn.mutate(
             f"update users set subscription_end='{end_of_period}' where user_id={user_id};"
         )

@@ -32,13 +32,33 @@ dp = Dispatcher()
 
 if DEMO_REGIME:
     ccy = {
-        "currency": "demo",
-        "currency_value": 1,
+        "30": {
+            "payload": "demo_30",
+            "value": 1,
+        },
+        "60": {
+            "payload": "demo_60",
+            "value": 2,
+        },
+        "90": {
+            "payload": "demo_90",
+            "value": 3,
+        },
     }
 else:
     ccy = {
-        "currency": "real",
-        "currency_value": 91,
+        "30": {
+            "payload": "real_30",
+            "value": 91,
+        },
+        "60": {
+            "payload": "real_60",
+            "value": 170,
+        },
+        "90": {
+            "payload": "real_90",
+            "value": 250,
+        },
     }
 
 
@@ -103,9 +123,27 @@ async def subscribe(call: CallbackQuery) -> None:
         title="Приобрести подписку",
         description=f"Подписка на 30 дней на {SERVICE_NAME}",
         prices=[
-            LabeledPrice(label=ccy["currency"].title(), amount=ccy["currency_value"]),
+            LabeledPrice(label=ccy["30"]["payload"].title(), amount=ccy["30"]["value"]),
         ],
-        payload=ccy["currency"],
+        payload=ccy["30"]["payload"],
+        currency="XTR",
+    )
+    await call.message.answer_invoice(
+        title="Приобрести подписку",
+        description=f"Подписка на 60 дней на {SERVICE_NAME}",
+        prices=[
+            LabeledPrice(label=ccy["60"]["payload"].title(), amount=ccy["60"]["value"]),
+        ],
+        payload=ccy["60"]["payload"],
+        currency="XTR",
+    )
+    await call.message.answer_invoice(
+        title="Приобрести подписку",
+        description=f"Подписка на 90 дней на {SERVICE_NAME}",
+        prices=[
+            LabeledPrice(label=ccy["90"]["payload"].title(), amount=ccy["90"]["value"]),
+        ],
+        payload=ccy["90"]["payload"],
         currency="XTR",
     )
 
@@ -125,7 +163,11 @@ async def successful_payment(message: Message, bot: Bot) -> None:
             telegram_payment_charge_id=message.successful_payment.telegram_payment_charge_id,
         )
         await message.answer("Demo. Your payment has been refunded.")
-        need_to_update_user(user_id, f"{uuid_gen}")
+        need_to_update_user(
+            user_id=user_id,
+            obfuscated_user=f"{uuid_gen}",
+            invoice_payload=message.successful_payment.invoice_payload,
+        )
         return
 
     await message.answer(
@@ -133,7 +175,11 @@ async def successful_payment(message: Message, bot: Bot) -> None:
         Ваш ID платежа: {message.successful_payment.telegram_payment_charge_id}""",
         message_effect_id="5104841245755180586",  # stars effect
     )
-    if not need_to_update_user(user_id, f"{uuid_gen}"):
+    if not need_to_update_user(
+        user_id=user_id,
+        obfuscated_user=f"{uuid_gen}",
+        invoice_payload=message.successful_payment.invoice_payload,
+    ):
         subprocess.run(
             shlex.split(
                 f"/{FS_USER}/vpn_wireguard_mirror_bot/./create_config.sh {uuid_gen}"
@@ -145,7 +191,7 @@ async def successful_payment(message: Message, bot: Bot) -> None:
         )
         return
 
-    await message.answer("Подписка продлена на месяц.")
+    await message.answer("Подписка продлена.")
 
 
 @invoices_router.callback_query(F.data.startswith("unsubscribe"))
@@ -160,7 +206,10 @@ async def unsubscribe(call: CallbackQuery, bot: Bot) -> None:
         )
         await bot.send_message(
             chat_id=ADMIN,
-            text=f"Пользователю с конфигом {conf_to_be_revoked} необходимо отменить подписку. Удален из базы.",
+            text=(
+                f"Пользователю с конфигом {conf_to_be_revoked} необходимо отменить подписку."
+                "Удален из базы."
+            ),
         )
         delete_user(call.from_user.id)
         return
@@ -198,25 +247,18 @@ async def get_instruction(call: CallbackQuery) -> None:
     )
 
 
-@invoices_router.pre_checkout_query(F.invoice_payload == "demo")
+@invoices_router.pre_checkout_query(F.invoice_payload)
 async def pre_checkout_query(query: PreCheckoutQuery) -> None:
     """
     Pre-checkout query handler
     """
     await query.answer(ok=True)
-
-
-@invoices_router.pre_checkout_query(F.invoice_payload == "real")
-async def pre_checkout_query(query: PreCheckoutQuery) -> None:
-    """
-    Pre-checkout query handler
-    """
-    if ccy["currency"] == (query.invoice_payload) and ccy["currency_value"] > 90:
-        await query.answer(ok=True)
-    else:
-        await query.answer(
-            ok=False, error_message="Невозможно купить подписку, повторите позже."
-        )
+    # if ccy["currency"] == (query.invoice_payload) and ccy["currency_value"] > 90:
+    #     await query.answer(ok=True)
+    # else:
+    #     await query.answer(
+    #         ok=False, error_message="Невозможно купить подписку, повторите позже."
+    #     )
 
 
 @invoices_router.callback_query(F.data.startswith("home"))
@@ -255,8 +297,8 @@ async def command_start_handler(message: Message) -> None:
             полную ответственность за использование сервиса.
             Подписка предоставляется на одно устройство.
             Возврат средств не предусмотрен за подписку на сервис,
-            оплата происходит единоразово на 30 дней.
-            При повторной оплате подписка продлевается на 30 дней.
+            оплата происходит единоразово на 30, 60 или 90 дней.
+            При повторной оплате подписка продлевается.
 
             Принимаете условия использования сервиса?
         """.replace(
