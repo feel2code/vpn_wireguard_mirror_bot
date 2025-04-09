@@ -14,16 +14,36 @@ TOKEN = getenv("BOT_TOKEN")
 
 
 async def main() -> None:
+    """Check subscriptions and send messages to users."""
     bot = Bot(token=TOKEN)
-    common_data, user_ids_tomorrow_ends = check_all_subscriptions()
+    (
+        common_data_vpn,
+        common_data_proxy,
+        user_ids_tomorrow_ends_vpn,
+        user_ids_tomorrow_ends_proxy,
+    ) = check_all_subscriptions()
     await bot.send_message(
         chat_id=ADMIN,
-        text=f"Пользователям {common_data} необходимо отменить подписки и удалить их из базы.",
+        text=(
+            f"""Пользователям:\nVPN {common_data_vpn},\nPROXY {common_data_proxy}
+                необходимо отменить подписки и удалить их из базы."""
+        ),
     )
-    for user_id in user_ids_tomorrow_ends:
+    for user_id in user_ids_tomorrow_ends_vpn:
         await bot.send_message(
             chat_id=int(user_id),
-            text="Напоминание о том, что ваша подписка завтра закончится. Вы можете продлить ее.",
+            text=(
+                """Напоминание о том, что ваша подписка на VPN завтра закончится.
+                   Вы можете продлить ее."""
+            ),
+        )
+    for user_id in user_ids_tomorrow_ends_proxy:
+        await bot.send_message(
+            chat_id=int(user_id),
+            text=(
+                """Напоминание о том, что ваша подписка на PROXY завтра закончится.
+                   Вы можете продлить ее."""
+            ),
         )
 
 

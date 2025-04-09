@@ -15,8 +15,8 @@ from aiogram.types import (CallbackQuery, FSInputFile, InlineKeyboardMarkup,
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from dotenv import load_dotenv
 
-from db_tools import (check_subscription_end, delete_user,
-                      get_obfuscated_user_conf, need_to_update_user)
+from db_tools import (check_subscription_end, get_obfuscated_user_conf,
+                      need_to_update_user)
 
 logger = logging.getLogger(__name__)
 invoices_router = Router(name=__name__)
@@ -28,6 +28,7 @@ SERVICE_NAME = getenv("SERVICE_NAME")
 ADMIN = getenv("ADMIN")
 TOKEN = getenv("BOT_TOKEN")
 FS_USER = getenv("FS_USER")
+HOST_AND_PORT = getenv("HOST_AND_PORT")
 dp = Dispatcher()
 
 if DEMO_REGIME:
@@ -44,6 +45,10 @@ if DEMO_REGIME:
             "payload": "demo_90",
             "value": 3,
         },
+        "proxy": {
+            "payload": "demo_proxy",
+            "value": 1,
+        },
     }
 else:
     ccy = {
@@ -59,6 +64,10 @@ else:
             "payload": "real_90",
             "value": 250,
         },
+        "proxy": {
+            "payload": "real_proxy",
+            "value": 100,
+        },
     }
 
 
@@ -68,7 +77,6 @@ def subscribe_management_kb() -> InlineKeyboardMarkup:
     """
     kb = InlineKeyboardBuilder()
     kb.button(text="➕ Купить подписку", callback_data="subscribe")
-    # kb.button(text="🗑️ Отменить подписку", callback_data="unsubscribe")
     kb.button(text="ℹ️  Инструкция и поддержка", callback_data="instruction")
     kb.button(
         text="👽 Проверить подписку", callback_data="check_end_date_of_subscription"
@@ -105,12 +113,21 @@ async def check_end_date_of_subscription(call: CallbackQuery) -> None:
     """
     conf_to_check = get_obfuscated_user_conf(call.from_user.id)
     if conf_to_check:
-        await call.message.answer(
-            f"Ваша подписка действует до: {check_subscription_end(call.from_user.id)}"
-        )
+        vpn_check = check_subscription_end(call.from_user.id, is_proxy=0)
+        proxy_check = check_subscription_end(call.from_user.id, is_proxy=1)
+        if vpn_check:
+            await call.message.answer(
+                f"""Ваша подписка на VPN действует до:
+                {str(vpn_check)[:-7]}"""
+            )
+        if proxy_check:
+            await call.message.answer(
+                f"""Ваша подписка на PROXY действует до:
+                {str(proxy_check)[:-7]}"""
+            )
         return
     await call.message.answer(
-        f"Действующая подписка на {SERVICE_NAME} не найдена!",
+        f"Действующие подписки на {SERVICE_NAME} не найдены!",
     )
 
 
@@ -120,8 +137,8 @@ async def subscribe(call: CallbackQuery) -> None:
     subscribe to the service
     """
     await call.message.answer_invoice(
-        title="Приобрести подписку",
-        description=f"Подписка на 30 дней на {SERVICE_NAME}",
+        title="Приобрести подписку VPN",
+        description=f"Подписка на 30 дней на {SERVICE_NAME} VPN",
         prices=[
             LabeledPrice(label=ccy["30"]["payload"].title(), amount=ccy["30"]["value"]),
         ],
@@ -129,8 +146,8 @@ async def subscribe(call: CallbackQuery) -> None:
         currency="XTR",
     )
     await call.message.answer_invoice(
-        title="Приобрести подписку",
-        description=f"Подписка на 60 дней на {SERVICE_NAME}",
+        title="Приобрести подписку VPN",
+        description=f"Подписка на 60 дней на {SERVICE_NAME} VPN",
         prices=[
             LabeledPrice(label=ccy["60"]["payload"].title(), amount=ccy["60"]["value"]),
         ],
@@ -138,12 +155,23 @@ async def subscribe(call: CallbackQuery) -> None:
         currency="XTR",
     )
     await call.message.answer_invoice(
-        title="Приобрести подписку",
-        description=f"Подписка на 90 дней на {SERVICE_NAME}",
+        title="Приобрести подписку VPN",
+        description=f"Подписка на 90 дней на {SERVICE_NAME} VPN",
         prices=[
             LabeledPrice(label=ccy["90"]["payload"].title(), amount=ccy["90"]["value"]),
         ],
         payload=ccy["90"]["payload"],
+        currency="XTR",
+    )
+    await call.message.answer_invoice(
+        title="Приобрести подписку PROXY",
+        description=f"Подписка на 30 дней на {SERVICE_NAME} PROXY",
+        prices=[
+            LabeledPrice(
+                label=ccy["proxy"]["payload"].title(), amount=ccy["proxy"]["value"]
+            ),
+        ],
+        payload=ccy["proxy"]["payload"],
         currency="XTR",
     )
 
@@ -180,10 +208,28 @@ async def successful_payment(message: Message, bot: Bot) -> None:
         obfuscated_user=f"{uuid_gen}",
         invoice_payload=message.successful_payment.invoice_payload,
     ):
+        # PROXY
+        if message.successful_payment.invoice_payload == "real_proxy":
+            proxy_key = str(uuid4())[:13]
+            subprocess.run(
+                shlex.split(
+                    f"/{FS_USER}/vpn_wireguard_mirror_bot/./create_proxy.sh {uuid_gen} {proxy_key}"
+                ),
+                check=False,
+            )
+            await bot.send_message(
+                chat_id=message.from_user.id,
+                text=(
+                    f"Хост: {HOST_AND_PORT}\nПользователь: {uuid_gen}\nПароль: {proxy_key}"
+                ),
+            )
+            return
+        # VPN
         subprocess.run(
             shlex.split(
                 f"/{FS_USER}/vpn_wireguard_mirror_bot/./create_config.sh {uuid_gen}"
-            )
+            ),
+            check=False,
         )
         await bot.send_document(
             chat_id=user_id,
@@ -194,31 +240,6 @@ async def successful_payment(message: Message, bot: Bot) -> None:
     await message.answer("Подписка продлена.")
 
 
-@invoices_router.callback_query(F.data.startswith("unsubscribe"))
-async def unsubscribe(call: CallbackQuery, bot: Bot) -> None:
-    """
-    unsubscribe from the service
-    """
-    conf_to_be_revoked = get_obfuscated_user_conf(call.from_user.id)
-    if conf_to_be_revoked:
-        await call.message.answer(
-            f"Заявка на отмену подписки на {SERVICE_NAME} отправлена в службу поддержки.",
-        )
-        await bot.send_message(
-            chat_id=ADMIN,
-            text=(
-                f"Пользователю с конфигом {conf_to_be_revoked} необходимо отменить подписку."
-                "Удален из базы."
-            ),
-        )
-        delete_user(call.from_user.id)
-        return
-
-    await call.message.answer(
-        f"Действующая подписка на {SERVICE_NAME} не найдена!",
-    )
-
-
 @invoices_router.callback_query(F.data.startswith("instruction"))
 async def get_instruction(call: CallbackQuery) -> None:
     """
@@ -226,8 +247,8 @@ async def get_instruction(call: CallbackQuery) -> None:
     """
     await call.message.answer(
         f"""
-        Инструкция по установке:
-        1. Установите приложение Wireguard на свой телефон
+        Инструкция по установке VPN:
+        1. Установите приложение Wireguard на свой смартфон
 
         * Для iOS: https://apps.apple.com/us/app/wireguard/id1441195209
         * Для Android: https://play.google.com/store/apps/details?id=com.wireguard.android
@@ -253,12 +274,6 @@ async def pre_checkout_query(query: PreCheckoutQuery) -> None:
     Pre-checkout query handler
     """
     await query.answer(ok=True)
-    # if ccy["currency"] == (query.invoice_payload) and ccy["currency_value"] > 90:
-    #     await query.answer(ok=True)
-    # else:
-    #     await query.answer(
-    #         ok=False, error_message="Невозможно купить подписку, повторите позже."
-    #     )
 
 
 @invoices_router.callback_query(F.data.startswith("home"))
@@ -273,7 +288,7 @@ async def home_menu(call: CallbackQuery) -> None:
 
 
 @invoices_router.callback_query(F.data.startswith("accept"))
-async def home_menu(call: CallbackQuery) -> None:
+async def accept_call(call: CallbackQuery) -> None:
     """
     returns user to the home menu
     """
@@ -299,6 +314,8 @@ async def command_start_handler(message: Message) -> None:
             Возврат средств не предусмотрен за подписку на сервис,
             оплата происходит единоразово на 30, 60 или 90 дней.
             При повторной оплате подписка продлевается.
+
+            Также есть отдельная подписка на PROXY на 30 дней.
 
             Принимаете условия использования сервиса?
         """.replace(

@@ -10,13 +10,13 @@ load_dotenv(".env")
 FS_USER = getenv("FS_USER")
 
 
-def check_subscription_end(user_id):
+def check_subscription_end(user_id, is_proxy):
     """
     Checks if user's subscription has ended
     """
     db_conn = SQLUtils()
     subscription_end = db_conn.query(
-        f"select subscription_end from users where user_id={user_id};"
+        f"select subscription_end from users where user_id={user_id} and is_proxy={is_proxy};"
     )
     return subscription_end
 
@@ -26,13 +26,26 @@ def check_all_subscriptions():
     Checks all subscriptions
     """
     db_conn = SQLUtils()
-    subscriptions_end = db_conn.query(
-        "select obfuscated_user from users where subscription_end <= date('now');"
+    subscriptions_end_vpn = db_conn.query(
+        "select obfuscated_user from users where subscription_end <= date('now') and is_proxy=0;"
     )
-    subscriptions_ends_tomorrow_users = db_conn.query(
-        "select user_id from users where subscription_end >= date('now', '+1 day') and subscription_end < date('now', '+2 day');"
+    subscriptions_ends_tomorrow_users_vpn = db_conn.query(
+        """select user_id from users where subscription_end >= date('now', '+1 day') 
+            and subscription_end < date('now', '+2 day') and is_proxy=0;"""
     )
-    return subscriptions_end, subscriptions_ends_tomorrow_users
+    subscriptions_end_proxy = db_conn.query(
+        "select obfuscated_user from users where subscription_end <= date('now') and is_proxy=1;"
+    )
+    subscriptions_ends_tomorrow_users_proxy = db_conn.query(
+        """select user_id from users where subscription_end >= date('now', '+1 day') 
+            and subscription_end < date('now', '+2 day') and is_proxy=1;"""
+    )
+    return (
+        subscriptions_end_vpn,
+        subscriptions_end_proxy,
+        subscriptions_ends_tomorrow_users_vpn,
+        subscriptions_ends_tomorrow_users_proxy,
+    )
 
 
 def get_obfuscated_user_conf(user_id):
@@ -65,20 +78,40 @@ def need_to_update_user(user_id, obfuscated_user, invoice_payload):
     db_conn = SQLUtils()
     user_exist = db_conn.query(f"select count(*) from users where user_id={user_id};")
     cur_datetime = datetime.now()
-    prolongation = int(invoice_payload.split("_")[1])
+    payload = invoice_payload.split("_")[1]
+    if payload == "proxy":
+        if user_exist:
+            end_of_period = datetime.fromisoformat(
+                check_subscription_end(user_id, is_proxy=1)
+            ) + timedelta(days=30)
+            db_conn.mutate(
+                f"""update users set subscription_end='{end_of_period}'
+                    where user_id={user_id} and is_proxy=1;"""
+            )
+            return True
+        db_conn.mutate(
+            f"""insert into users
+                (id, user_id, obfuscated_user, subscription_start, subscription_end, is_proxy)
+                values ((select max(id)+1 from users), '{user_id}', '{obfuscated_user}',
+                '{cur_datetime}', '{end_of_period}', 1);"""
+        )
+        return False
+    prolongation = int(payload)
     end_of_period = cur_datetime + timedelta(days=prolongation)
     if user_exist:
         end_of_period = datetime.fromisoformat(
-            check_subscription_end(user_id)
+            check_subscription_end(user_id, is_proxy=0)
         ) + timedelta(days=prolongation)
         db_conn.mutate(
-            f"update users set subscription_end='{end_of_period}' where user_id={user_id};"
+            f"""update users set subscription_end='{end_of_period}'
+                where user_id={user_id} and is_proxy=0;"""
         )
         return True
     db_conn.mutate(
-        f"""insert into users (id, user_id, obfuscated_user, subscription_start, subscription_end)
+        f"""insert into users
+            (id, user_id, obfuscated_user, subscription_start, subscription_end, is_proxy)
             values ((select max(id)+1 from users), '{user_id}', '{obfuscated_user}',
-            '{cur_datetime}', '{end_of_period}');"""
+            '{cur_datetime}', '{end_of_period}', 0);"""
     )
     return False
 
