@@ -82,7 +82,7 @@ def subscribe_management_kb() -> InlineKeyboardMarkup:
     kb.button(
         text="👽 Проверить подписку", callback_data="check_end_date_of_subscription"
     )
-    kb.adjust(2, 2, 1)
+    kb.adjust(1, 1, 1, 1)
     return kb.as_markup()
 
 
@@ -94,7 +94,7 @@ def home_kb() -> InlineKeyboardMarkup:
     kb.button(text="➕ Купить подписку VPN", callback_data="subscribe_vpn")
     kb.button(text="➕ Купить подписку PROXY", callback_data="subscribe_proxy")
     kb.button(text="😢 Назад", callback_data="home")
-    kb.adjust(2, 2, 1)
+    kb.adjust(1, 1, 1)
     return kb.as_markup()
 
 
