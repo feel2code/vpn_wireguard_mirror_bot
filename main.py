@@ -76,7 +76,8 @@ def subscribe_management_kb() -> InlineKeyboardMarkup:
     subscribe management keyboard
     """
     kb = InlineKeyboardBuilder()
-    kb.button(text="➕ Купить подписку", callback_data="subscribe")
+    kb.button(text="➕ Купить подписку VPN", callback_data="subscribe_vpn")
+    kb.button(text="➕ Купить подписку PROXY", callback_data="subscribe_proxy")
     kb.button(text="ℹ️  Инструкция и поддержка", callback_data="instruction")
     kb.button(
         text="👽 Проверить подписку", callback_data="check_end_date_of_subscription"
@@ -90,7 +91,8 @@ def home_kb() -> InlineKeyboardMarkup:
     home keyboard
     """
     kb = InlineKeyboardBuilder()
-    kb.button(text="➕ Купить подписку", callback_data="subscribe")
+    kb.button(text="➕ Купить подписку VPN", callback_data="subscribe_vpn")
+    kb.button(text="➕ Купить подписку PROXY", callback_data="subscribe_proxy")
     kb.button(text="😢 Назад", callback_data="home")
     kb.adjust(2, 2, 1)
     return kb.as_markup()
@@ -131,10 +133,10 @@ async def check_end_date_of_subscription(call: CallbackQuery) -> None:
     )
 
 
-@invoices_router.callback_query(F.data.startswith("subscribe"))
-async def subscribe(call: CallbackQuery) -> None:
+@invoices_router.callback_query(F.data.startswith("subscribe_vpn"))
+async def subscribe_vpn(call: CallbackQuery) -> None:
     """
-    subscribe to the service
+    subscribe to the VPN service
     """
     await call.message.answer_invoice(
         title="Приобрести подписку VPN",
@@ -163,6 +165,13 @@ async def subscribe(call: CallbackQuery) -> None:
         payload=ccy["90"]["payload"],
         currency="XTR",
     )
+
+
+@invoices_router.callback_query(F.data.startswith("subscribe_proxy"))
+async def subscribe_proxy(call: CallbackQuery) -> None:
+    """
+    subscribe to the PROXY service
+    """
     await call.message.answer_invoice(
         title="Приобрести подписку PROXY",
         description=f"Подписка на 30 дней на {SERVICE_NAME} PROXY",
