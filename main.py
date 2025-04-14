@@ -273,7 +273,13 @@ async def pre_checkout_query(query: PreCheckoutQuery) -> None:
     """
     Pre-checkout query handler
     """
-    await query.answer(ok=True)
+    if query.invoice_payload.startswith("real"):
+        await query.answer(ok=True)
+        return
+    if query.invoice_payload.startswith("demo"):
+        await query.answer(ok=True)
+        return
+    await query.answer(ok=False, error_message="Начните работу с ботом заново. /start")
 
 
 @invoices_router.callback_query(F.data.startswith("home"))
