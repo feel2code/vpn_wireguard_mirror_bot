@@ -273,10 +273,10 @@ async def pre_checkout_query(query: PreCheckoutQuery) -> None:
     """
     Pre-checkout query handler
     """
-    if query.invoice_payload.startswith("real"):
+    if query.invoice_payload.startswith("real_"):
         await query.answer(ok=True)
         return
-    if query.invoice_payload.startswith("demo"):
+    if query.invoice_payload.startswith("demo_"):
         await query.answer(ok=True)
         return
     await query.answer(ok=False, error_message="Начните работу с ботом заново. /start")
