@@ -1,2 +1,33 @@
 # vpn_wireguard_mirror_bot
-Interactive telegram bot for automate VPN clients
+Interactive telegram bot for automate VPN clients. Based on async aiogram.
+
+## Installation
+```bash
+git clone https://github.com/feel2code/vpn_wireguard_mirror_bot.git
+cd vpn_wireguard_mirror_bot
+pip install -r requirements.txt
+```
+## Configuration
+```bash
+cp env.template .env
+```
+Edit `.env` file and set the following variables:
+```bash
+BOT_TOKEN=
+SERVICE_NAME=
+ADMIN=
+FS_USER=
+DB_NAME=
+DEMO_REGIME=1
+HOST_AND_PORT=
+```
+
+## Run
+```bash
+python3 main.py
+```
+
+## Features
+- [x] Wireguard
+- [x] proxy
+
