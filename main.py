@@ -29,6 +29,11 @@ ADMIN = getenv("ADMIN")
 TOKEN = getenv("BOT_TOKEN")
 FS_USER = getenv("FS_USER")
 HOST_AND_PORT = getenv("HOST_AND_PORT")
+
+PRICING = {
+    "vpn_30": int(getenv("VPN_30")),
+    "proxy_30": int(getenv("PROXY_30")),
+}
 dp = Dispatcher()
 
 if DEMO_REGIME:
@@ -54,19 +59,19 @@ else:
     ccy = {
         "30": {
             "payload": "real_30",
-            "value": 91,
+            "value": PRICING["vpn_30"],
         },
         "60": {
             "payload": "real_60",
-            "value": 170,
+            "value": round(PRICING["vpn_30"] * 2 * 0.94),
         },
         "90": {
             "payload": "real_90",
-            "value": 250,
+            "value": round(PRICING["vpn_30"] * 3 * 0.9),
         },
         "proxy": {
             "payload": "real_proxy",
-            "value": 100,
+            "value": PRICING["proxy_30"],
         },
     }
 
