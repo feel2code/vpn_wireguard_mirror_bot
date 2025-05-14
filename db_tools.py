@@ -21,6 +21,15 @@ def check_subscription_end(user_id, is_proxy):
     return subscription_end
 
 
+def get_all_users():
+    """
+    Gets all users from the database
+    """
+    db_conn = SQLUtils()
+    all_users = db_conn.query("select user_id from users;")
+    return all_users
+
+
 def check_all_subscriptions():
     """
     Checks all subscriptions

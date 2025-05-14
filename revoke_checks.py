@@ -6,7 +6,7 @@ from os import getenv
 from aiogram import Bot
 from dotenv import load_dotenv
 
-from db_tools import check_all_subscriptions
+from db_tools import check_all_subscriptions, get_all_users
 
 load_dotenv(".env")
 ADMIN = getenv("ADMIN")
@@ -44,6 +44,17 @@ async def main() -> None:
                 """Напоминание о том, что ваша подписка на PROXY завтра закончится.
                    Вы можете продлить ее."""
             ),
+        )
+
+
+async def send_message_to_all_users() -> None:
+    """Send message to all users."""
+    bot = Bot(token=TOKEN)
+    all_users = get_all_users()
+    for user_id in all_users:
+        await bot.send_message(
+            chat_id=int(user_id),
+            text="Объявление: ",
         )
 
 
