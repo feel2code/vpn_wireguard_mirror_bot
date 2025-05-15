@@ -29,6 +29,16 @@ async def main() -> None:
                 необходимо отменить подписки и удалить их из базы."""
         ),
     )
+    user_ids_tomorrow_ends_vpn = (
+        [user_ids_tomorrow_ends_vpn]
+        if isinstance(user_ids_tomorrow_ends_vpn, int)
+        else user_ids_tomorrow_ends_vpn
+    )
+    user_ids_tomorrow_ends_proxy = (
+        [user_ids_tomorrow_ends_proxy]
+        if isinstance(user_ids_tomorrow_ends_proxy, int)
+        else user_ids_tomorrow_ends_proxy
+    )
     for user_id in user_ids_tomorrow_ends_vpn:
         await bot.send_message(
             chat_id=int(user_id),
