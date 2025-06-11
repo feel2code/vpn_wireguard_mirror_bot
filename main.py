@@ -10,13 +10,22 @@ from aiogram import Bot, Dispatcher, F, Router, html
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import Command
-from aiogram.types import (CallbackQuery, FSInputFile, InlineKeyboardMarkup,
-                           LabeledPrice, Message, PreCheckoutQuery)
+from aiogram.types import (
+    CallbackQuery,
+    FSInputFile,
+    InlineKeyboardMarkup,
+    LabeledPrice,
+    Message,
+    PreCheckoutQuery,
+)
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from dotenv import load_dotenv
 
-from db_tools import (check_subscription_end, get_obfuscated_user_conf,
-                      need_to_update_user)
+from db_tools import (
+    check_subscription_end,
+    get_obfuscated_user_conf,
+    need_to_update_user,
+)
 
 logger = logging.getLogger(__name__)
 invoices_router = Router(name=__name__)
@@ -38,40 +47,40 @@ dp = Dispatcher()
 
 if DEMO_REGIME:
     ccy = {
-        "30": {
+        "demo_1": {
             "payload": "demo_30",
             "value": 1,
         },
-        "60": {
-            "payload": "demo_60",
-            "value": 2,
-        },
-        "90": {
-            "payload": "demo_90",
-            "value": 3,
-        },
-        "proxy": {
+        "proxy_1": {
             "payload": "demo_proxy",
             "value": 1,
         },
     }
 else:
     ccy = {
-        "30": {
+        "real_30": {
             "payload": "real_30",
             "value": PRICING["vpn_30"],
         },
-        "60": {
+        "real_60": {
             "payload": "real_60",
             "value": round(PRICING["vpn_30"] * 2 * 0.94),
         },
-        "90": {
+        "real_90": {
             "payload": "real_90",
             "value": round(PRICING["vpn_30"] * 3 * 0.9),
         },
-        "proxy": {
-            "payload": "real_proxy",
+        "proxy_30": {
+            "payload": "proxy_30",
             "value": PRICING["proxy_30"],
+        },
+        "proxy_60": {
+            "payload": "proxy_60",
+            "value": round(PRICING["proxy_30"] * 2 * 0.94),
+        },
+        "proxy_90": {
+            "payload": "proxy_90",
+            "value": round(PRICING["proxy_30"] * 3 * 0.9),
         },
     }
 
@@ -143,33 +152,19 @@ async def subscribe_vpn(call: CallbackQuery) -> None:
     """
     subscribe to the VPN service
     """
-    await call.message.answer_invoice(
-        title="Приобрести подписку VPN",
-        description=f"Подписка на 30 дней на {SERVICE_NAME} VPN",
-        prices=[
-            LabeledPrice(label=ccy["30"]["payload"].title(), amount=ccy["30"]["value"]),
-        ],
-        payload=ccy["30"]["payload"],
-        currency="XTR",
-    )
-    await call.message.answer_invoice(
-        title="Приобрести подписку VPN",
-        description=f"Подписка на 60 дней на {SERVICE_NAME} VPN",
-        prices=[
-            LabeledPrice(label=ccy["60"]["payload"].title(), amount=ccy["60"]["value"]),
-        ],
-        payload=ccy["60"]["payload"],
-        currency="XTR",
-    )
-    await call.message.answer_invoice(
-        title="Приобрести подписку VPN",
-        description=f"Подписка на 90 дней на {SERVICE_NAME} VPN",
-        prices=[
-            LabeledPrice(label=ccy["90"]["payload"].title(), amount=ccy["90"]["value"]),
-        ],
-        payload=ccy["90"]["payload"],
-        currency="XTR",
-    )
+    for period in [30, 60, 90]:
+        await call.message.answer_invoice(
+            title="Приобрести подписку VPN",
+            description=f"Подписка на {period} дней на {SERVICE_NAME} VPN",
+            prices=[
+                LabeledPrice(
+                    label=ccy[f"real_{period}"]["payload"].title(),
+                    amount=ccy[f"real_{period}"]["value"],
+                ),
+            ],
+            payload=ccy[f"real_{period}"]["payload"],
+            currency="XTR",
+        )
 
 
 @invoices_router.callback_query(F.data.startswith("subscribe_proxy"))
@@ -177,17 +172,19 @@ async def subscribe_proxy(call: CallbackQuery) -> None:
     """
     subscribe to the PROXY service
     """
-    await call.message.answer_invoice(
-        title="Приобрести подписку PROXY",
-        description=f"Подписка на 30 дней на {SERVICE_NAME} PROXY",
-        prices=[
-            LabeledPrice(
-                label=ccy["proxy"]["payload"].title(), amount=ccy["proxy"]["value"]
-            ),
-        ],
-        payload=ccy["proxy"]["payload"],
-        currency="XTR",
-    )
+    for period in [30, 60, 90]:
+        await call.message.answer_invoice(
+            title="Приобрести подписку PROXY",
+            description=f"Подписка на {period} дней на {SERVICE_NAME} PROXY",
+            prices=[
+                LabeledPrice(
+                    label=ccy[f"proxy_{period}"]["payload"].title(),
+                    amount=ccy[f"proxy_{period}"]["value"],
+                ),
+            ],
+            payload=ccy[f"proxy_{period}"]["payload"],
+            currency="XTR",
+        )
 
 
 @invoices_router.message(F.successful_payment)
@@ -223,7 +220,7 @@ async def successful_payment(message: Message, bot: Bot) -> None:
         invoice_payload=message.successful_payment.invoice_payload,
     ):
         # PROXY
-        if message.successful_payment.invoice_payload == "real_proxy":
+        if message.successful_payment.invoice_payload.startswith("proxy_"):
             proxy_key = str(uuid4())[:13]
             subprocess.run(
                 shlex.split(
@@ -239,17 +236,18 @@ async def successful_payment(message: Message, bot: Bot) -> None:
             )
             return
         # VPN
-        subprocess.run(
-            shlex.split(
-                f"/{FS_USER}/vpn_wireguard_mirror_bot/./create_config.sh {uuid_gen}"
-            ),
-            check=False,
-        )
-        await bot.send_document(
-            chat_id=user_id,
-            document=FSInputFile(f"/{FS_USER}/{uuid_gen}.conf"),
-        )
-        return
+        if message.successful_payment.invoice_payload.startswith("real_"):
+            subprocess.run(
+                shlex.split(
+                    f"/{FS_USER}/vpn_wireguard_mirror_bot/./create_config.sh {uuid_gen}"
+                ),
+                check=False,
+            )
+            await bot.send_document(
+                chat_id=user_id,
+                document=FSInputFile(f"/{FS_USER}/{uuid_gen}.conf"),
+            )
+            return
 
     await message.answer("Подписка продлена.")
 
@@ -288,6 +286,9 @@ async def pre_checkout_query(query: PreCheckoutQuery) -> None:
     Pre-checkout query handler
     """
     if query.invoice_payload.startswith("real_"):
+        await query.answer(ok=True)
+        return
+    if query.invoice_payload.startswith("proxy"):
         await query.answer(ok=True)
         return
     if query.invoice_payload.startswith("demo_"):
@@ -335,7 +336,7 @@ async def command_start_handler(message: Message) -> None:
             оплата происходит единоразово на 30, 60 или 90 дней.
             При повторной оплате подписка продлевается.
 
-            Также есть отдельная подписка на PROXY на 30 дней.
+            Также есть отдельная подписка на PROXY на 30, 60 или 90 дней.
 
             Принимаете условия использования сервиса?
         """.replace(

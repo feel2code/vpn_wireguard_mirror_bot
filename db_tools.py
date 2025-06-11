@@ -85,40 +85,22 @@ def need_to_update_user(user_id, obfuscated_user, invoice_payload):
     otherwise inserts new user with subscription end date
     """
     db_conn = SQLUtils()
-    vpn_user_exist = db_conn.query(
-        f"select count(*) from users where user_id={user_id} and is_proxy=0;"
-    )
-    proxy_user_exist = db_conn.query(
-        f"select count(*) from users where user_id={user_id} and is_proxy=1;"
-    )
     cur_datetime = datetime.now()
-    payload = invoice_payload.split("_")[1]
-    if payload == "proxy":
-        if proxy_user_exist:
-            end_of_period = datetime.fromisoformat(
-                check_subscription_end(user_id, is_proxy=1)
-            ) + timedelta(days=30)
-            db_conn.mutate(
-                f"""update users set subscription_end='{end_of_period}'
-                    where user_id={user_id} and is_proxy=1;"""
-            )
-            return True
-        end_of_period = cur_datetime + timedelta(days=30)
-        db_conn.mutate(
-            f"""insert into users
-                (id, user_id, obfuscated_user, subscription_start, subscription_end, is_proxy)
-                values ((select max(id)+1 from users), '{user_id}', '{obfuscated_user}',
-                '{cur_datetime}', '{end_of_period}', 1);"""
-        )
-        return False
-    prolongation = int(payload)
-    if vpn_user_exist:
+
+    subscription_type = invoice_payload.split("_")[0]
+    prolongation = int(invoice_payload.split("_")[1])
+
+    is_proxy = 1 if subscription_type == "proxy" else 0
+    user_exist = db_conn.query(
+        f"select count(*) from users where user_id={user_id} and is_proxy={is_proxy};"
+    )
+    if user_exist:
         end_of_period = datetime.fromisoformat(
-            check_subscription_end(user_id, is_proxy=0)
+            check_subscription_end(user_id, is_proxy=is_proxy)
         ) + timedelta(days=prolongation)
         db_conn.mutate(
             f"""update users set subscription_end='{end_of_period}'
-                where user_id={user_id} and is_proxy=0;"""
+                where user_id={user_id} and is_proxy={is_proxy};"""
         )
         return True
     end_of_period = cur_datetime + timedelta(days=prolongation)
@@ -126,7 +108,7 @@ def need_to_update_user(user_id, obfuscated_user, invoice_payload):
         f"""insert into users
             (id, user_id, obfuscated_user, subscription_start, subscription_end, is_proxy)
             values ((select max(id)+1 from users), '{user_id}', '{obfuscated_user}',
-            '{cur_datetime}', '{end_of_period}', 0);"""
+            '{cur_datetime}', '{end_of_period}', {is_proxy});"""
     )
     return False
 
