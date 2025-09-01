@@ -70,12 +70,14 @@ def get_obfuscated_user_conf(user_id):
     return f"{obfuscated_user}.conf"
 
 
-def delete_user(user_id):
+def delete_user_subscription(user_id, is_proxy):
     """
-    Deletes user from the database
+    Deletes user subscription from the database
     """
     db_conn = SQLUtils()
-    db_conn.mutate(f"delete from users where user_id={user_id};")
+    db_conn.mutate(
+        f"delete from users where user_id={user_id} and is_proxy={is_proxy};"
+    )
 
 
 def need_to_update_user(user_id, obfuscated_user, invoice_payload):

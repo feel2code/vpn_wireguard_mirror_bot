@@ -1,16 +1,37 @@
 # Should be addded to cron
 
 import asyncio
+import os
 from os import getenv
 
 from aiogram import Bot
 from dotenv import load_dotenv
 
-from db_tools import check_all_subscriptions, get_all_users
+from db_tools import check_all_subscriptions, delete_user_subscription, get_all_users
 
 load_dotenv(".env")
 ADMIN = getenv("ADMIN")
 TOKEN = getenv("BOT_TOKEN")
+
+
+def delete_obfuscated_user_vpn_conf(obfuscated_user: str) -> bool:
+    """Delete obfuscated user configuration file via automated sh script."""
+    try:
+        os.system(f"sh delete_config.sh {obfuscated_user}")
+        return True
+    except Exception as e:
+        print(f"Error deleting vpn conf: {e}")
+        return False
+
+
+def delete_obfuscated_user_proxy_conf(obfuscated_user: str) -> bool:
+    """Delete obfuscated user configuration file via automated sh script."""
+    try:
+        os.system(f"sh delete_proxy.sh {obfuscated_user}")
+        return True
+    except Exception as e:
+        print(f"Error deleting proxy conf: {e}")
+        return False
 
 
 async def main() -> None:
@@ -26,9 +47,18 @@ async def main() -> None:
         chat_id=ADMIN,
         text=(
             f"""Пользователям:\nVPN {common_data_vpn},\nPROXY {common_data_proxy}
-                необходимо отменить подписки и удалить их из базы."""
+                будут отменены подписки и удалены из базы."""
         ),
     )
+    for obfuscated_user in common_data_vpn:
+        if delete_obfuscated_user_vpn_conf(obfuscated_user):
+            print(f"Deleted VPN config for user: {obfuscated_user}")
+            delete_user_subscription(obfuscated_user, 0)
+    for obfuscated_user in common_data_proxy:
+        if delete_obfuscated_user_proxy_conf(obfuscated_user):
+            print(f"Deleted PROXY config for user: {obfuscated_user}")
+            delete_user_subscription(obfuscated_user, 1)
+
     user_ids_tomorrow_ends_vpn = (
         [user_ids_tomorrow_ends_vpn]
         if isinstance(user_ids_tomorrow_ends_vpn, int)
@@ -43,7 +73,7 @@ async def main() -> None:
         await bot.send_message(
             chat_id=int(user_id),
             text=(
-                """Напоминание о том, что ваша подписка на VPN завтра закончится.
+                """Напоминание о том, что ваша подписка на неVPN завтра закончится.
                    Вы можете продлить ее."""
             ),
         )
