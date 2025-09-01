@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ $# -ne 1 ]; then
-    echo "No argument provided"
+    echo "No argument provided" >&2
     exit 1
 fi
 
@@ -10,8 +10,8 @@ FILE="/etc/3proxy/.proxyauth"
 UUID="$1"
 
 if [ ! -f "$FILE" ]; then
-    echo "File '$FILE' does not exist"
     chmod 400 $FILE
+    echo "File '$FILE' does not exist" >&2
     exit 1
 fi
 
@@ -22,9 +22,9 @@ TMP_FILE=$(mktemp)
 grep -v "^${UUID}:" "$FILE" > "$TMP_FILE"
 
 if cmp -s "$FILE" "$TMP_FILE"; then
-    echo "Client UUID '$UUID' not found in file '$FILE'"
     rm "$TMP_FILE"
     chmod 400 $FILE
+    echo "Client UUID '$UUID' not found in file '$FILE'" >&2
     exit 1
 fi
 
