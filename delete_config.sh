@@ -44,9 +44,11 @@ if {$client_number != ""} {
     send "y\n"
     expect eof
     puts "Client $username deleted"
+    file delete $temp_file
+	exit 0
 } else {
     puts "Client $username not found"
+    file delete $temp_file
+	exit 1
 }
-
-file delete $temp_file
 

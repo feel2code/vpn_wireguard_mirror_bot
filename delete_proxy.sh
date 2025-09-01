@@ -25,13 +25,13 @@ if cmp -s "$FILE" "$TMP_FILE"; then
     echo "Client UUID '$UUID' not found in file '$FILE'"
     rm "$TMP_FILE"
     chmod 400 $FILE
-    exit 0
+    exit 1
 fi
 
 mv "$TMP_FILE" "$FILE"
 rm "$TMP_FILE"
 
-echo "Clien UUID '$UUID' deleted from file '$FILE', restarting 3proxy..."
+echo "Client UUID '$UUID' deleted from file '$FILE', restarting 3proxy..."
 
 chmod 400 $FILE
 
@@ -39,4 +39,5 @@ sudo systemctl daemon-reload
 sudo systemctl restart 3proxy
 
 echo "Client deleted from $output_file"
+exit 0
 

@@ -1,7 +1,7 @@
 # Should be addded to cron
 
 import asyncio
-import os
+import subprocess
 from os import getenv
 
 from aiogram import Bot
@@ -17,7 +17,12 @@ TOKEN = getenv("BOT_TOKEN")
 def delete_obfuscated_user_vpn_conf(obfuscated_user: str) -> bool:
     """Delete obfuscated user configuration file via automated sh script."""
     try:
-        os.system(f"sh delete_config.sh {obfuscated_user}")
+        result = subprocess.run(
+            ["sh", "delete_config.sh", obfuscated_user], capture_output=True, text=True
+        )
+        if result.returncode != 0:
+            print(f"Error deleting vpn conf: {result.stderr}")
+            return False
         return True
     except Exception as e:
         print(f"Error deleting vpn conf: {e}")
@@ -27,7 +32,12 @@ def delete_obfuscated_user_vpn_conf(obfuscated_user: str) -> bool:
 def delete_obfuscated_user_proxy_conf(obfuscated_user: str) -> bool:
     """Delete obfuscated user configuration file via automated sh script."""
     try:
-        os.system(f"sh delete_proxy.sh {obfuscated_user}")
+        result = subprocess.run(
+            ["sh", "delete_proxy.sh", obfuscated_user], capture_output=True, text=True
+        )
+        if result.returncode != 0:
+            print(f"Error deleting proxy conf: {result.stderr}")
+            return False
         return True
     except Exception as e:
         print(f"Error deleting proxy conf: {e}")
