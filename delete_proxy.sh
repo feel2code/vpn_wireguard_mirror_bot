@@ -6,19 +6,16 @@ if [ $# -ne 1 ]; then
 fi
 
 FILE="/etc/3proxy/.proxyauth"
-chmod 640 $FILE
-
-
-echo "$arg1:CL:$arg2" >> "$output_file"
-
-
 
 UUID="$1"
 
 if [ ! -f "$FILE" ]; then
     echo "File '$FILE' does not exist"
+    chmod 400 $FILE
     exit 1
 fi
+
+chmod 640 $FILE
 
 TMP_FILE=$(mktemp)
 
@@ -27,6 +24,7 @@ grep -v "^${UUID}:" "$FILE" > "$TMP_FILE"
 if cmp -s "$FILE" "$TMP_FILE"; then
     echo "Client UUID '$UUID' not found in file '$FILE'"
     rm "$TMP_FILE"
+    chmod 400 $FILE
     exit 0
 fi
 
