@@ -66,8 +66,7 @@ async def main() -> None:
     await bot.send_message(
         chat_id=ADMIN,
         text=(
-            f"""Пользователям:\nVPN {common_data_vpn},\nPROXY {common_data_proxy}
-                будут отменены подписки и удалены из базы."""
+            f"Пользователям:\nVPN {common_data_vpn},\nPROXY {common_data_proxy}\nотменены подписки и удалены из базы."
         ),
     )
 
