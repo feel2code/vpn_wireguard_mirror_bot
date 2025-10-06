@@ -53,6 +53,16 @@ async def main() -> None:
         user_ids_tomorrow_ends_vpn,
         user_ids_tomorrow_ends_proxy,
     ) = check_all_subscriptions()
+
+    if isinstance(common_data_vpn, str):
+        common_data_vpn = list(common_data_vpn)
+    if isinstance(common_data_proxy, str):
+        common_data_proxy = list(common_data_proxy)
+    if isinstance(user_ids_tomorrow_ends_vpn, str):
+        user_ids_tomorrow_ends_vpn = list(user_ids_tomorrow_ends_vpn)
+    if isinstance(user_ids_tomorrow_ends_proxy, str):
+        user_ids_tomorrow_ends_proxy = list(user_ids_tomorrow_ends_proxy)
+
     await bot.send_message(
         chat_id=ADMIN,
         text=(
@@ -60,6 +70,7 @@ async def main() -> None:
                 будут отменены подписки и удалены из базы."""
         ),
     )
+
     for obfuscated_user in common_data_vpn:
         if delete_obfuscated_user_vpn_conf(obfuscated_user):
             print(f"Deleted VPN config for user: {obfuscated_user}")
