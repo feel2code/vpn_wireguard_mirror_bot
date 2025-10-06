@@ -14,6 +14,7 @@ output_file="/etc/3proxy/.proxyauth"
 echo "$arg1:CL:$arg2" >> "$output_file"
 
 chmod 400 /etc/3proxy/.proxyauth
+chown proxy3:proxy3 .proxyauth
 
 sudo systemctl daemon-reload
 sudo systemctl restart 3proxy
