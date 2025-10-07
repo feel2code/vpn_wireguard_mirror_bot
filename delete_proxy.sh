@@ -34,6 +34,7 @@ rm "$TMP_FILE"
 echo "Client UUID '$UUID' deleted from file '$FILE', restarting 3proxy..."
 
 chmod 400 $FILE
+chown proxy3:proxy3 $FILE
 
 sudo systemctl daemon-reload
 sudo systemctl restart 3proxy
