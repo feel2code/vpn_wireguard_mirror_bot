@@ -82,6 +82,10 @@ else:
             "payload": "proxy_90",
             "value": round(PRICING["proxy_30"] * 3 * 0.9),
         },
+        "vray_90": {
+            "payload": "vray_90",
+            "value": round(PRICING["vpn_30"] * 3),
+        },
     }
 
 
@@ -92,11 +96,12 @@ def subscribe_management_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     kb.button(text="➕ Купить подписку неVPN", callback_data="subscribe_vpn")
     kb.button(text="➕ Купить подписку PROXY", callback_data="subscribe_proxy")
+    kb.button(text="➕ Купить подписку Velvet RAY", callback_data="subscribe_vray")
     kb.button(text="ℹ️  Инструкция и поддержка", callback_data="instruction")
     kb.button(
         text="👽 Проверить подписку", callback_data="check_end_date_of_subscription"
     )
-    kb.adjust(1, 1, 1, 1)
+    kb.adjust(1, 1, 1, 1, 1)
     return kb.as_markup()
 
 
@@ -107,8 +112,9 @@ def home_kb() -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
     kb.button(text="➕ Купить подписку неVPN", callback_data="subscribe_vpn")
     kb.button(text="➕ Купить подписку PROXY", callback_data="subscribe_proxy")
+    kb.button(text="➕ Купить подписку Velvet RAY", callback_data="subscribe_vray")
     kb.button(text="😢 Назад", callback_data="home")
-    kb.adjust(1, 1, 1)
+    kb.adjust(1, 1, 1, 1)
     return kb.as_markup()
 
 
@@ -118,7 +124,7 @@ def accept_kb() -> InlineKeyboardMarkup:
     """
     kb = InlineKeyboardBuilder()
     kb.button(text="ПРИНИМАЮ", callback_data="accept")
-    kb.adjust(2, 2, 1)
+    kb.adjust(2, 2, 1)  # TODO: do we need that actually?
     return kb.as_markup()
 
 
@@ -187,6 +193,26 @@ async def subscribe_proxy(call: CallbackQuery) -> None:
         )
 
 
+@invoices_router.callback_query(F.data.startswith("subscribe_vray"))
+async def subscribe_vray(call: CallbackQuery) -> None:
+    """
+    subscribe to the vray service
+    """
+    for period in [90]:
+        await call.message.answer_invoice(
+            title="Приобрести подписку Velvet RAY",
+            description=f"Подписка на {period} дней на Velvet Ray",
+            prices=[
+                LabeledPrice(
+                    label=ccy[f"vray_{period}"]["payload"].title(),
+                    amount=ccy[f"vray_{period}"]["value"],
+                ),
+            ],
+            payload=ccy[f"vray_{period}"]["payload"],
+            currency="XTR",
+        )
+
+
 @invoices_router.message(F.successful_payment)
 async def successful_payment(message: Message, bot: Bot) -> None:
     """
@@ -214,6 +240,16 @@ async def successful_payment(message: Message, bot: Bot) -> None:
         Ваш ID платежа: {message.successful_payment.telegram_payment_charge_id}""",
         message_effect_id="5104841245755180586",  # stars effect
     )
+    if message.successful_payment.invoice_payload == "vray_90":
+        await bot.send_message(
+            chat_id=message.from_user.id,
+            text=(
+                "Спасибо за покупку!"
+                "Дальнейшие действия:\n1. Установите приложение hiddify.\n"
+                "2. Воспользуйтесь ботом @velvet_ray_bot"
+            ),
+        )
+        return
     if not need_to_update_user(
         user_id=user_id,
         obfuscated_user=f"{uuid_gen}",
@@ -293,6 +329,9 @@ async def pre_checkout_query(query: PreCheckoutQuery) -> None:
         await query.answer(ok=True)
         return
     if query.invoice_payload.startswith("demo_"):
+        await query.answer(ok=True)
+        return
+    if query.invoice_payload.startswith("vray_"):
         await query.answer(ok=True)
         return
     await query.answer(ok=False, error_message="Начните работу с ботом заново. /start")
