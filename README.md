@@ -33,3 +33,6 @@ python3 main.py
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Planning:
+- [ ] Need to update architecture to use flags in db for each service (wg, proxy, vray)

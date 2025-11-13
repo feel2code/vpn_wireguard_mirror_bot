@@ -50,34 +50,48 @@ async def main() -> None:
     (
         common_data_vpn,
         common_data_proxy,
+        common_data_vray,
         user_ids_tomorrow_ends_vpn,
         user_ids_tomorrow_ends_proxy,
+        user_ids_tomorrow_ends_vray,
     ) = check_all_subscriptions()
 
     if isinstance(common_data_vpn, str):
         common_data_vpn = [common_data_vpn]
     if isinstance(common_data_proxy, str):
         common_data_proxy = [common_data_proxy]
+    if isinstance(common_data_vray, str):
+        common_data_vray = [common_data_vray]
     if isinstance(user_ids_tomorrow_ends_vpn, str):
         user_ids_tomorrow_ends_vpn = [user_ids_tomorrow_ends_vpn]
     if isinstance(user_ids_tomorrow_ends_proxy, str):
         user_ids_tomorrow_ends_proxy = [user_ids_tomorrow_ends_proxy]
+    if isinstance(user_ids_tomorrow_ends_vray, str):
+        user_ids_tomorrow_ends_vray = [user_ids_tomorrow_ends_vray]
 
     await bot.send_message(
         chat_id=ADMIN,
         text=(
-            f"Пользователям:\nVPN {common_data_vpn},\nPROXY {common_data_proxy}\nотменены подписки и удалены из базы."
+            f"Пользователям:\n"
+            f"VPN {common_data_vpn},\n"
+            f"PROXY {common_data_proxy}\n"
+            f"VRAY {common_data_vray}\n"
+            "отменены подписки и удалены из базы."
         ),
     )
 
     for obfuscated_user in common_data_vpn:
         if delete_obfuscated_user_vpn_conf(obfuscated_user):
             print(f"Deleted VPN config for user: {obfuscated_user}")
-            delete_user_subscription(obfuscated_user, 0)
+            delete_user_subscription(obfuscated_user, 0, 0)
     for obfuscated_user in common_data_proxy:
         if delete_obfuscated_user_proxy_conf(obfuscated_user):
             print(f"Deleted PROXY config for user: {obfuscated_user}")
-            delete_user_subscription(obfuscated_user, 1)
+            delete_user_subscription(obfuscated_user, 1, 0)
+    for obfuscated_user in common_data_vray:
+        if delete_obfuscated_user_proxy_conf(obfuscated_user):
+            print(f"Deleted PROXY config for user: {obfuscated_user}")
+            delete_user_subscription(obfuscated_user, 0, 1)
 
     user_ids_tomorrow_ends_vpn = (
         [user_ids_tomorrow_ends_vpn]
@@ -88,6 +102,11 @@ async def main() -> None:
         [user_ids_tomorrow_ends_proxy]
         if isinstance(user_ids_tomorrow_ends_proxy, int)
         else user_ids_tomorrow_ends_proxy
+    )
+    user_ids_tomorrow_ends_vray = (
+        [user_ids_tomorrow_ends_vray]
+        if isinstance(user_ids_tomorrow_ends_vray, int)
+        else user_ids_tomorrow_ends_vray
     )
     for user_id in user_ids_tomorrow_ends_vpn:
         await bot.send_message(
@@ -102,6 +121,14 @@ async def main() -> None:
             chat_id=int(user_id),
             text=(
                 """Напоминание о том, что ваша подписка на PROXY завтра закончится.
+                   Вы можете продлить ее."""
+            ),
+        )
+    for user_id in user_ids_tomorrow_ends_vray:
+        await bot.send_message(
+            chat_id=int(user_id),
+            text=(
+                """Напоминание о том, что ваша подписка на VRAY завтра закончится.
                    Вы можете продлить ее."""
             ),
         )

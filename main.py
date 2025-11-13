@@ -26,6 +26,7 @@ from db_tools import (
     get_obfuscated_user_conf,
     need_to_update_user,
 )
+from xui import add_xui_client, get_client_info
 
 logger = logging.getLogger(__name__)
 invoices_router = Router(name=__name__)
@@ -137,6 +138,7 @@ async def check_end_date_of_subscription(call: CallbackQuery) -> None:
     if conf_to_check:
         vpn_check = check_subscription_end(call.from_user.id, is_proxy=0)
         proxy_check = check_subscription_end(call.from_user.id, is_proxy=1)
+        vray_check = check_subscription_end(call.from_user.id, is_vray=1)
         if vpn_check:
             await call.message.answer(
                 f"""Ваша подписка на неVPN действует до:
@@ -146,6 +148,11 @@ async def check_end_date_of_subscription(call: CallbackQuery) -> None:
             await call.message.answer(
                 f"""Ваша подписка на PROXY действует до:
                 {str(proxy_check)[:-7]}"""
+            )
+        if vray_check:
+            await call.message.answer(
+                f"""Ваша подписка на VRAY действует до:
+                {str(vray_check)[:-7]}"""
             )
         return
     await call.message.answer(
@@ -221,6 +228,7 @@ async def successful_payment(message: Message, bot: Bot) -> None:
     """
     user_id = message.from_user.id
     uuid_gen = str(uuid4())[:13]
+    nickname = message.from_user.nickname
 
     if DEMO_REGIME:
         await bot.refund_star_payment(
@@ -240,16 +248,6 @@ async def successful_payment(message: Message, bot: Bot) -> None:
         Ваш ID платежа: {message.successful_payment.telegram_payment_charge_id}""",
         message_effect_id="5104841245755180586",  # stars effect
     )
-    if message.successful_payment.invoice_payload == "vray_90":
-        await bot.send_message(
-            chat_id=message.from_user.id,
-            text=(
-                "Спасибо за покупку!"
-                "Дальнейшие действия:\n1. Установите приложение hiddify.\n"
-                "2. Воспользуйтесь ботом @velvet_ray_bot"
-            ),
-        )
-        return
     if not need_to_update_user(
         user_id=user_id,
         obfuscated_user=f"{uuid_gen}",
@@ -284,6 +282,16 @@ async def successful_payment(message: Message, bot: Bot) -> None:
                 document=FSInputFile(f"/{FS_USER}/{uuid_gen}.conf"),
             )
             return
+        # VRAY
+        if message.successful_payment.invoice_payload == "vray_90":
+            add_xui_client(user_id, nickname, uuid_gen)
+            slug = get_client_info(f"{uuid_gen}@vray")
+            sub_url = f"{getenv('HOST_URL')}/sub/{slug}"
+            await bot.send_message(
+                chat_id=user_id, text="Вставьте следующий URL в приложение:"
+            )
+            await bot.send_message(chat_id=user_id, text=sub_url)
+            return
 
     await message.answer("Подписка продлена.")
 
@@ -297,12 +305,22 @@ async def get_instruction(call: CallbackQuery) -> None:
         f"""
         Инструкция по установке неVPN:
         1. Установите приложение Wireguard на свой смартфон
-
         * Для iOS: https://apps.apple.com/us/app/wireguard/id1441195209
         * Для Android: https://play.google.com/store/apps/details?id=com.wireguard.android
-
         2. Купите подписку на {SERVICE_NAME}.
+        3. После оплаты, вам придет сообщение с файлом, который нужно
+        импортировать в приложении для подключения.
 
+        Инструкция по установке PROXY:
+        1. Установите плагин/приложения для прокси
+        2. Купите подписку на {SERVICE_NAME}.
+        3. Введите логин/пароль
+
+        Инструкция по установке VRAY:
+        1. Установите клиент VRAY на свой смартфон
+        * Для iOS: https://apps.apple.com/us/app/v2box-v2ray-client/id6446814690
+        * Для Android: https://play.google.com/store/apps/details?id=com.v2raytun.android
+        2. Купите подписку на {SERVICE_NAME}.
         3. После оплаты, вам придет сообщение с файлом, который нужно
         импортировать в приложении для подключения.
 

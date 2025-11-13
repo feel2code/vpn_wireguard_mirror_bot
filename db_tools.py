@@ -10,13 +10,14 @@ load_dotenv(".env")
 FS_USER = getenv("FS_USER")
 
 
-def check_subscription_end(user_id, is_proxy):
+def check_subscription_end(user_id, is_proxy=0, is_vray=0):
     """
     Checks if user's subscription has ended
     """
     db_conn = SQLUtils()
     subscription_end = db_conn.query(
-        f"select subscription_end from users where user_id={user_id} and is_proxy={is_proxy};"
+        f"select subscription_end from users where user_id={user_id} "
+        f"and is_proxy={is_proxy} and is_vray={is_vray};"
     )
     return subscription_end
 
@@ -36,24 +37,39 @@ def check_all_subscriptions():
     """
     db_conn = SQLUtils()
     subscriptions_end_vpn = db_conn.query(
-        "select obfuscated_user from users where subscription_end <= date('now') and is_proxy=0;"
+        "select obfuscated_user from users where subscription_end <= date('now') "
+        "and is_proxy=0 and is_vray=0;"
     )
     subscriptions_ends_tomorrow_users_vpn = db_conn.query(
         """select user_id from users where subscription_end >= date('now', '+1 day') 
-            and subscription_end < date('now', '+2 day') and is_proxy=0;"""
+            and subscription_end < date('now', '+2 day') 
+            and is_proxy=0 and is_vray=0;"""
     )
     subscriptions_end_proxy = db_conn.query(
-        "select obfuscated_user from users where subscription_end <= date('now') and is_proxy=1;"
+        "select obfuscated_user from users where subscription_end <= date('now')"
+        "and is_proxy=1 and is_vray=0;"
     )
     subscriptions_ends_tomorrow_users_proxy = db_conn.query(
         """select user_id from users where subscription_end >= date('now', '+1 day') 
-            and subscription_end < date('now', '+2 day') and is_proxy=1;"""
+            and subscription_end < date('now', '+2 day') 
+            and is_proxy=1 and is_vray=0;"""
+    )
+    subscriptions_end_vray = db_conn.query(
+        "select obfuscated_user from users where subscription_end <= date('now') "
+        "and is_proxy=0 and is_vray=1;"
+    )
+    subscriptions_ends_tomorrow_users_vray = db_conn.query(
+        """select user_id from users where subscription_end >= date('now', '+1 day') 
+            and subscription_end < date('now', '+2 day')
+            and is_proxy=0 and is_vray=1;"""
     )
     return (
         subscriptions_end_vpn,
         subscriptions_end_proxy,
         subscriptions_ends_tomorrow_users_vpn,
         subscriptions_ends_tomorrow_users_proxy,
+        subscriptions_end_vray,
+        subscriptions_ends_tomorrow_users_vray,
     )
 
 
@@ -70,13 +86,14 @@ def get_obfuscated_user_conf(user_id):
     return f"{obfuscated_user}.conf"
 
 
-def delete_user_subscription(user_id, is_proxy):
+def delete_user_subscription(user_id, is_proxy=0, is_vray=0):
     """
     Deletes user subscription from the database
     """
     db_conn = SQLUtils()
     db_conn.mutate(
-        f"delete from users where user_id={user_id} and is_proxy={is_proxy};"
+        f"delete from users where user_id={user_id} "
+        f"and is_proxy={is_proxy} and is_vray={is_vray};"
     )
 
 
@@ -93,16 +110,18 @@ def need_to_update_user(user_id, obfuscated_user, invoice_payload):
     prolongation = int(invoice_payload.split("_")[1])
 
     is_proxy = 1 if subscription_type == "proxy" else 0
+    is_vray = 1 if subscription_type == "vray" else 0
     user_exist = db_conn.query(
-        f"select count(*) from users where user_id={user_id} and is_proxy={is_proxy};"
+        f"select count(*) from users where user_id={user_id} "
+        f"and is_proxy={is_proxy} and is_vray={is_vray};"
     )
     if user_exist:
         end_of_period = datetime.fromisoformat(
-            check_subscription_end(user_id, is_proxy=is_proxy)
+            check_subscription_end(user_id, is_proxy=is_proxy, is_vray=is_vray)
         ) + timedelta(days=prolongation)
         db_conn.mutate(
             f"""update users set subscription_end='{end_of_period}'
-                where user_id={user_id} and is_proxy={is_proxy};"""
+                where user_id={user_id} and is_proxy={is_proxy} and is_vray={is_vray};"""
         )
         return True
     end_of_period = cur_datetime + timedelta(days=prolongation)
@@ -110,7 +129,7 @@ def need_to_update_user(user_id, obfuscated_user, invoice_payload):
         f"""insert into users
             (id, user_id, obfuscated_user, subscription_start, subscription_end, is_proxy)
             values ((select max(id)+1 from users), '{user_id}', '{obfuscated_user}',
-            '{cur_datetime}', '{end_of_period}', {is_proxy});"""
+            '{cur_datetime}', '{end_of_period}', {is_proxy}, {is_vray});"""
     )
     return False
 
