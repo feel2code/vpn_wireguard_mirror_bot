@@ -228,7 +228,7 @@ async def successful_payment(message: Message, bot: Bot) -> None:
     """
     user_id = message.from_user.id
     uuid_gen = str(uuid4())[:13]
-    nickname = message.from_user.nickname
+    nickname = message.from_user.username
 
     if DEMO_REGIME:
         await bot.refund_star_payment(
@@ -425,5 +425,5 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
     asyncio.run(main())

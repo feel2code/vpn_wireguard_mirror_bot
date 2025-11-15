@@ -145,5 +145,14 @@ async def send_message_to_all_users() -> None:
         )
 
 
+async def refund() -> None:
+    bot = Bot(token=TOKEN)
+    await bot.refund_star_payment(
+        user_id=0,
+        telegram_payment_charge_id="",
+    )
+
+
 if __name__ == "__main__":
     asyncio.run(main())
+    # asyncio.run(refund())
