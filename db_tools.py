@@ -66,9 +66,9 @@ def check_all_subscriptions():
     return (
         subscriptions_end_vpn,
         subscriptions_end_proxy,
+        subscriptions_end_vray,
         subscriptions_ends_tomorrow_users_vpn,
         subscriptions_ends_tomorrow_users_proxy,
-        subscriptions_end_vray,
         subscriptions_ends_tomorrow_users_vray,
     )
 
