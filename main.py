@@ -59,16 +59,16 @@ if DEMO_REGIME:
     }
 else:
     ccy = {
-        "real_30": {
-            "payload": "real_30",
+        "unreal_30": {
+            "payload": "unreal_30",
             "value": PRICING["vpn_30"],
         },
-        "real_60": {
-            "payload": "real_60",
+        "unreal_60": {
+            "payload": "unreal_60",
             "value": round(PRICING["vpn_30"] * 2 * 0.94),
         },
-        "real_90": {
-            "payload": "real_90",
+        "unreal_90": {
+            "payload": "unreal_90",
             "value": round(PRICING["vpn_30"] * 3 * 0.9),
         },
         "proxy_30": {
@@ -171,11 +171,11 @@ async def subscribe_vpn(call: CallbackQuery) -> None:
             description=f"Подписка на {period} дней на {SERVICE_NAME} неVPN",
             prices=[
                 LabeledPrice(
-                    label=ccy[f"real_{period}"]["payload"].title(),
-                    amount=ccy[f"real_{period}"]["value"],
+                    label=ccy[f"unreal_{period}"]["payload"].title(),
+                    amount=ccy[f"unreal_{period}"]["value"],
                 ),
             ],
-            payload=ccy[f"real_{period}"]["payload"],
+            payload=ccy[f"unreal_{period}"]["payload"],
             currency="XTR",
         )
 
@@ -270,7 +270,7 @@ async def successful_payment(message: Message, bot: Bot) -> None:
             )
             return
         # VPN
-        if message.successful_payment.invoice_payload.startswith("real_"):
+        if message.successful_payment.invoice_payload.startswith("unreal_"):
             subprocess.run(
                 shlex.split(
                     f"/{FS_USER}/vpn_wireguard_mirror_bot/./create_config.sh {uuid_gen}"
@@ -340,7 +340,7 @@ async def pre_checkout_query(query: PreCheckoutQuery) -> None:
     """
     Pre-checkout query handler
     """
-    if query.invoice_payload.startswith("real_"):
+    if query.invoice_payload.startswith("unreal_"):
         await query.answer(ok=True)
         return
     if query.invoice_payload.startswith("proxy"):
