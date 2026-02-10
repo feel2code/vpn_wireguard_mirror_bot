@@ -278,8 +278,12 @@ async def successful_payment(message: Message, bot: Bot) -> None:
             proxy_key = str(uuid4())[:13]
             subprocess.run(
                 shlex.split(
-                    f"/{FS_USER}/vpn_wireguard_mirror_bot/./create_proxy.sh {uuid_gen} {proxy_key}"
+                    f"/usr/local/3proxy/conf/add3proxyuser.sh {uuid_gen} {proxy_key}"
                 ),
+                check=False,
+            )
+            subprocess.run(
+                shlex.split("systemctl restart 3proxy"),
                 check=False,
             )
             await bot.send_message(

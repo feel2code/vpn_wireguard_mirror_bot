@@ -33,6 +33,7 @@ def auth():
 
 def add_xui_client(user_id: int, nickname: str, obfuscated_user: str):
     """Adding new x-ui client via api on https."""
+    print(f"Adding new x-ui client {nickname}")
     session = auth()
     expiry_timestamp = int((time.time() + DAYS_VALID * 86400) * 1000)
 
@@ -81,4 +82,4 @@ def get_client_info(email: str):
 
 if __name__ == "__main__":
     # add_xui_client(os.getenv("ADMIN"), "test_nick2", "test")
-    get_clients("test@vray")
+    get_client_info("test@vray")
