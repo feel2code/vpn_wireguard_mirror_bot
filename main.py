@@ -102,7 +102,8 @@ def subscribe_management_kb() -> InlineKeyboardMarkup:
     kb.button(
         text="👽 Проверить подписку", callback_data="check_end_date_of_subscription"
     )
-    kb.adjust(1, 1, 1, 1, 1)
+    kb.button(text="✔️ Прислать файл неVPN", callback_data="restore_wg_file")
+    kb.adjust(1, 1, 1, 1, 1, 1)
     return kb.as_markup()
 
 
@@ -157,6 +158,24 @@ async def check_end_date_of_subscription(call: CallbackQuery) -> None:
         return
     await call.message.answer(
         f"Действующие подписки на {SERVICE_NAME} не найдены!",
+    )
+
+
+@invoices_router.callback_query(F.data.startswith("restore_wg_file"))
+async def restore_wg_file(call: CallbackQuery) -> None:
+    """
+    restore file if subscription exists
+    """
+    obfuscated_user = get_obfuscated_user_conf(call.from_user.id)
+    if obfuscated_user:
+        vpn_check = check_subscription_end(call.from_user.id, is_proxy=0)
+        if vpn_check:
+            await call.send_document(
+                chat_id=call.from_user.id,
+                document=FSInputFile(f"/{FS_USER}/{obfuscated_user}.conf"),
+            )
+    await call.message.answer(
+        f"Действующая подпискa на {SERVICE_NAME} неVPN не найдена!",
     )
 
 
