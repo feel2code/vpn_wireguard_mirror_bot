@@ -166,14 +166,15 @@ async def restore_wg_file(call: CallbackQuery) -> None:
     """
     restore file if subscription exists
     """
-    obfuscated_user = get_obfuscated_user_conf(call.from_user.id)
-    if obfuscated_user:
+    obfuscated_user_conf = get_obfuscated_user_conf(call.from_user.id)
+    if obfuscated_user_conf:
         vpn_check = check_subscription_end(call.from_user.id, is_proxy=0)
         if vpn_check:
-            await call.send_document(
+            await call.bot.send_document(
                 chat_id=call.from_user.id,
-                document=FSInputFile(f"/{FS_USER}/{obfuscated_user}.conf"),
+                document=FSInputFile(f"/{FS_USER}/{obfuscated_user_conf}"),
             )
+            return
     await call.message.answer(
         f"Действующая подпискa на {SERVICE_NAME} неVPN не найдена!",
     )
