@@ -143,17 +143,17 @@ async def check_end_date_of_subscription(call: CallbackQuery) -> None:
         if vpn_check:
             await call.message.answer(
                 f"""Ваша подписка на неVPN действует до:
-                {str(vpn_check)[:-7]}"""
+                {str(vpn_check)[:-8]}"""
             )
         if proxy_check:
             await call.message.answer(
                 f"""Ваша подписка на PROXY действует до:
-                {str(proxy_check)[:-7]}"""
+                {str(proxy_check)[:-8]}"""
             )
         if vray_check:
             await call.message.answer(
                 f"""Ваша подписка на VRAY действует до:
-                {str(vray_check)[:-7]}"""
+                {str(vray_check)[:-8]}"""
             )
         return
     await call.message.answer(
