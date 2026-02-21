@@ -43,6 +43,7 @@ HOST_AND_PORT = getenv("HOST_AND_PORT")
 PRICING = {
     "vpn_30": int(getenv("VPN_30")),
     "proxy_30": int(getenv("PROXY_30")),
+    "vray_90": int(getenv("VRAY_90")),
 }
 dp = Dispatcher()
 
@@ -85,7 +86,7 @@ else:
         },
         "vray_90": {
             "payload": "vray_90",
-            "value": round(PRICING["vpn_30"] * 3),
+            "value": round(PRICING["vray_90"] * 3),
         },
     }
 
@@ -141,20 +142,14 @@ async def check_end_date_of_subscription(call: CallbackQuery) -> None:
         proxy_check = check_subscription_end(call.from_user.id, is_proxy=1)
         vray_check = check_subscription_end(call.from_user.id, is_vray=1)
         if vpn_check:
-            await call.message.answer(
-                f"""Ваша подписка на неVPN действует до:
-                {str(vpn_check)[:-8]}"""
-            )
+            await call.message.answer(f"""Ваша подписка на неVPN действует до:
+                {str(vpn_check)[:-8]}""")
         if proxy_check:
-            await call.message.answer(
-                f"""Ваша подписка на PROXY действует до:
-                {str(proxy_check)[:-8]}"""
-            )
+            await call.message.answer(f"""Ваша подписка на PROXY действует до:
+                {str(proxy_check)[:-8]}""")
         if vray_check:
-            await call.message.answer(
-                f"""Ваша подписка на VRAY действует до:
-                {str(vray_check)[:-8]}"""
-            )
+            await call.message.answer(f"""Ваша подписка на VRAY действует до:
+                {str(vray_check)[:-8]}""")
         return
     await call.message.answer(
         f"Действующие подписки на {SERVICE_NAME} не найдены!",
@@ -352,9 +347,7 @@ async def get_instruction(call: CallbackQuery) -> None:
         дает доступ к ресурсам компании {SERVICE_NAME}.
 
         По вопросам поддержки обращаться к @feel2code
-        """.replace(
-            "  ", ""
-        ),
+        """.replace("  ", ""),
         reply_markup=home_kb(),
     )
 
@@ -433,9 +426,7 @@ async def command_start_handler(message: Message) -> None:
             Также есть подписка VRAY на 90 дней.
 
             Принимаете условия использования сервиса?
-        """.replace(
-            "  ", ""
-        ),
+        """.replace("  ", ""),
         reply_markup=accept_kb(),
     )
 
